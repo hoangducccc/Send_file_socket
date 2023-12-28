@@ -17,7 +17,7 @@ Có thể thay đổi đường dẫn thư mục muốn lưu trữ trong chươn
 ```
 #define FILE_PATH "files_server/"
 ```
-Biên dich chương trình từ server.c
+Biên dịch chương trình từ server.c
 ```
 gcc -o server server.c -pthread
 ```
@@ -25,7 +25,7 @@ Chạy chương trình bên server
 ```
 ./server
 ```
-Biên dich chương trình từ client.c
+Biên dịch chương trình từ client.c
 ```
 gcc -o client client.c
 ```
