@@ -184,14 +184,6 @@ void *client_handler(void *arg)
         pthread_exit(NULL);
     }
 
-    struct sockaddr_in client_addr;
-    socklen_t addr_len = sizeof(client_addr);
-    getpeername(client_socket, (struct sockaddr *)&client_addr, &addr_len);
-    char client_ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
-
-    printf("Kết nối từ: %s\n", client_ip);
-
     if (buffer[bytesRead - 1] == '\n')
     {
         buffer[bytesRead - 1] = '\0';
