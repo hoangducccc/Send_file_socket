@@ -1,4 +1,5 @@
 # Send_file
+## Cài đặt chương trình
 Tải code chương trình về
 ```
 git clone https://github.com/hoangducccc/Send_file_socket
@@ -33,3 +34,11 @@ Chạy chương trình bên server
 ```
 ./client
 ```
+## Hướng dẫn sử dụng chương trình
+Sau khi client kết nối với server sẽ hiện ra danh sách các dịch vụ để người dùng chọn, nhập số tương ứng với dịch vụ muốn sử dụng.
+### Tính năng List file
+Khi nhập 1 sẽ cho người dùng xem danh sách các file (hoặc đường dẫn nếu file đó nằm trong thư mục con).
+### Tính năng Download
+Khi nhập 2 sẽ thực hiện tính năng dowload, chương trình sẽ cho người dùng xem danh sách các file (hoặc đường dẫn file) của server. Khi đó người dùng phải nhập chính xác tên file (hoặc đường dẫn file) muốn tải về được hiển thị.
+### Tính năng Upload
+Khi nhập 3 sẽ thực hiện tính năng upload, ban đầu chương trình sẽ yêu cầu nhập mật khẩu để gửi yêu cầu xác thực đến server. Nếu mật khẩu nhập đúng thì chương trình sẽ hiện ra danh sách các file của client, người dùng muốn upload file nào cần nhập đúng tên file đó.
