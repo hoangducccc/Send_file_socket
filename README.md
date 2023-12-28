@@ -5,7 +5,7 @@ git clone https://github.com/hoangducccc/Send_file_socket
 ```
 Có thể thay đổi địa chỉ ip của server tùy thuộc vào nhu cầu sử dụng, mặc định trong chương trình client.c để địa chỉ loopback để thực hiện test trên một máy
 ```
-#define SERVER_IP "20.78.13.17"
+#define SERVER_IP "127.0.0.1"
 ```
 Có thể thay đổi password trong server.c tại 
 ```
