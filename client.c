@@ -95,7 +95,7 @@ void upload_file(int socket_fd, char *filename)
 SendFileList listFiles(int socket_fd)
 {
     char request[] = "list";
-    send(socket_fd, request, strlen(request) + 1, 0);
+    send(socket_fd, request, strlen(request), 0);
 
     SendFileList receiveList;
     if (recv(socket_fd, &receiveList, sizeof(receiveList), 0) == -1)
@@ -277,7 +277,7 @@ int main()
                     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
                     connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
                     snprintf(request, sizeof(request), "%s%s", "send", filepath);
-                    send(socket_fd, request, strlen(request) + 1, 0);
+                    send(socket_fd, request, strlen(request), 0);
                     receiveFile(socket_fd, filename);
                 }
                 else
@@ -311,7 +311,7 @@ int main()
                 }
 
                 snprintf(request, sizeof(request), "%s%s", "upload", password);
-                send(socket_fd, request, strlen(request) + 1, 0);
+                send(socket_fd, request, strlen(request), 0);
                 if (upload_confirm(socket_fd) == 1)
                 {
                     b = 0;
@@ -346,7 +346,7 @@ int main()
                                 socket_fd = socket(AF_INET, SOCK_STREAM, 0);
                                 connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
                                 snprintf(request, sizeof(request), "%s%s", password, fileList[i]);
-                                send(socket_fd, request, strlen(request) + 1, 0);
+                                send(socket_fd, request, strlen(request), 0);
                                 if (lets_upload(socket_fd) == 1){
                                         upload_file(socket_fd, fileList[i]);
                                         printf("Upload %s successfully.\n", fileList[i]);
