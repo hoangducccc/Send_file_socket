@@ -142,29 +142,22 @@ void receiveFile(int client_socket, char *filename)
     fclose(file);
 }
 
-void clearInputBuffer()
-{
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-}
-
 void upload_confirm(int client_socket)
 {
     char request[1024] = "agree_to_upload";
-    send(client_socket, request, strlen(request) + 1, 0);
+    send(client_socket, request, strlen(request), 0);
 }
-
 
 void upload_refuse(int client_socket)
 {
     char request[1024] = "refuse_to_upload";
-    send(client_socket, request, strlen(request) + 1, 0);
+    send(client_socket, request, strlen(request), 0);
 }
 
 void lets_upload(int client_socket)
 {
     char request[1024] = "let's_upload";
-    send(client_socket, request, strlen(request) + 1, 0);
+    send(client_socket, request, strlen(request), 0);
 }
 
 void *client_handler(void *arg)
