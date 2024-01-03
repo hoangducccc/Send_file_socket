@@ -101,7 +101,7 @@ void listFiles(int client_socket)
 
     if (send(client_socket, &fileList, sizeof(fileList), 0) == -1)
     {
-        error("Lỗi khi gửi danh sách tệp");
+        error("Error when sending the file list");
     }
 }
 
