@@ -145,8 +145,7 @@ void receiveFile(int client_socket, char *filename)
 void clearInputBuffer()
 {
     int c;
-    while ((c = getchar()) != '\n' && c != EOF)
-        ;
+    while ((c = getchar()) != '\n' && c != EOF);
 }
 
 void upload_confirm(int client_socket)
