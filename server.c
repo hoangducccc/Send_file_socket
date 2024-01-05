@@ -60,7 +60,7 @@ void listFilesRecursively(char *basePath, SendFileList *fileList, int *index)
 
     if (dr == NULL)
     {
-        error("Không thể mở thư mục");
+        perror("Can't open folder");
     }
 
     while ((de = readdir(dr)) != NULL)
@@ -274,13 +274,13 @@ int main()
         client_socket = accept(socket_fd, (struct sockaddr *)&client_addr, &client_addr_len);
         if (client_socket == -1)
         {
-            error("Unable to accept connection.");
+            perror("Unable to accept connection.");
         }
 
         pthread_t thread;
         if (pthread_create(&thread, NULL, client_handler, &client_socket) != 0)
         {
-            error("Unable to create a new thread.");
+            perror("Unable to create a new thread.");
         }
 
         pthread_detach(thread);
