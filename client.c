@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
-#define PORT 8080
+#define PORT 8081
 #define SERVER_IP "127.0.0.1"
 #define FILE_PATH "files_client/"
 
@@ -63,7 +61,7 @@ void upload_file(int socket_fd, char *filename)
 {
     char filepath[256];
     size_t bytesRead;
-    snprintf(filepath, sizeof(filepath), "%s%s", FILE_PATH, filename);
+    snprintf(filepath, sizeof(filepath), "%s/%s", FILE_PATH, filename);
 
     FILE *file = fopen(filepath, "rb");
     if (file == NULL)
@@ -97,7 +95,7 @@ void upload_file(int socket_fd, char *filename)
 SendFileList listFiles(int socket_fd)
 {
     char request[] = "list";
-    send(socket_fd, request, strlen(request), 0);
+    send(socket_fd, request, strlen(request) + 1, 0);
 
     SendFileList receiveList;
     if (recv(socket_fd, &receiveList, sizeof(receiveList), 0) == -1)
@@ -114,6 +112,44 @@ SendFileList listFiles(int socket_fd)
     return receiveList;
 }
 
+char* findNewFileName(char *filename) {
+    char *newFilename = malloc(strlen(filename) + 2);
+    int t = 0;
+    struct dirent *de;
+    char name[256];
+    char extension[256];
+    //DIR *dr = opendir("demo");
+    strcpy(newFilename, filename);
+    strcpy(name, filename);
+    char *ext = strrchr(name, '.');
+    //strcpy(extension, ext);
+    if(ext != NULL){
+        strcpy(extension, ext);
+        *ext = '\0';
+        //strcpy(extension, ext);
+    }
+    int a = 1;
+    while(a) {
+        a = 0;
+        DIR *dr = opendir(FILE_PATH);
+        while ((de = readdir(dr)) != NULL) {
+            if (strcmp(de->d_name, newFilename) == 0) {
+                a = 1;
+                t++;
+                if(ext != NULL){
+                    sprintf(newFilename, "%s_%d%s", name, t, extension);
+                }
+                else {
+                    sprintf(newFilename, "%s_%d", name, t);
+                }
+                break;
+            }
+        }
+        closedir(dr);
+    }
+    return newFilename;
+}
+
 int upload_confirm(int socket_fd)
 {
     char buffer[1024];
@@ -121,6 +157,7 @@ int upload_confirm(int socket_fd)
     int t = 1;
 
     bytesRead = recv(socket_fd, buffer, sizeof(buffer), 0);
+    printf("%s", buffer);
     if (bytesRead <= 0)
     {
         close(socket_fd);
@@ -157,39 +194,51 @@ int lets_upload(int socket_fd)
     }
 }
 
-
-
-char **list_files_upload(int *num_files)
+void listFilesRecursively(char *basePath, SendFileList *fileList, int *index)
 {
+    char path[1024];
     struct dirent *de;
-    DIR *dr = opendir(FILE_PATH);
+    DIR *dr = opendir(basePath);
+    size_t length_file_path = strlen(FILE_PATH);
 
     if (dr == NULL)
     {
-        error("Unable to open the folder");
+        error("Không thể mở thư mục");
     }
-
-    *num_files = 0;
-    char **fileList = NULL;
-
-    printf("======== List files on server ========\n");
 
     while ((de = readdir(dr)) != NULL)
     {
-        if (de->d_type == DT_REG)
+        if (strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
         {
-            *num_files += 1;
-            fileList = (char **)realloc(fileList, sizeof(char *) * (*num_files));
-            fileList[*num_files - 1] = strdup(de->d_name);
+            snprintf(path, sizeof(path), "%s/%s", basePath, de->d_name);
 
-            printf("%s\n", de->d_name);
+            if (de->d_type == DT_REG)
+            {
+                strncpy(fileList->filenames[*index], path, sizeof(fileList->filenames[*index]));
+                strcpy(fileList->filenames[*index], fileList->filenames[*index] + length_file_path + 1);
+                printf("%s\n", fileList->filenames[*index]);
+                (*index)++;
+            }
+            else if (de->d_type == DT_DIR)
+            {
+                listFilesRecursively(path, fileList, index);
+            }
         }
     }
 
     closedir(dr);
-
-    return fileList;
 }
+
+SendFileList listFilesUpload()
+{
+    SendFileList listFile;
+    listFile.num_files = 0;
+    printf("======== List files upload ======== \n");
+
+    listFilesRecursively(FILE_PATH, &listFile, &(listFile.num_files));
+    return listFile;
+}
+
 
 void clearInputBuffer()
 {
@@ -240,8 +289,9 @@ int main()
             close(socket_fd);
             while (1)
             {
-                char filepath[256];
-                char filename[256];
+                char filepath[512];
+                char filename[512];
+                char *newfilename;
                 printf("Enter the file name (file path) to download or 'quit' to exit: ");
                 fgets(filepath, sizeof(filepath), stdin);
 
@@ -264,6 +314,8 @@ int main()
                         strcpy(filename, filepath);
                 }
 
+                newfilename = findNewFileName(filename);
+
                 int find = 0;
                 for (int i = 0; i < receiveList.num_files; i++)
                 {
@@ -279,14 +331,16 @@ int main()
                     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
                     connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
                     snprintf(request, sizeof(request), "%s%s", "send", filepath);
-                    send(socket_fd, request, strlen(request), 0);
-                    receiveFile(socket_fd, filename);
+                    send(socket_fd, request, strlen(request) + 1, 0);
+                    receiveFile(socket_fd, newfilename);
                 }
                 else
                 {
                     printf("File does not exist. Please try again.\n");
                 }
+                free(newfilename);
             }
+            //free(newfilename);
             break;
         }
 
@@ -313,45 +367,54 @@ int main()
                 }
 
                 snprintf(request, sizeof(request), "%s%s", "upload", password);
-                send(socket_fd, request, strlen(request), 0);
+                send(socket_fd, request, strlen(request) + 1, 0);
                 if (upload_confirm(socket_fd) == 1)
                 {
                     b = 0;
                     //close(socket_fd);
 
                     //int a = 1;
-                    int num_files;
-                    char **fileList = list_files_upload(&num_files);
+                    //int num_files;
+                    //char fileList = list_files_upload(&num_files);
+                    SendFileList listFile = listFilesUpload();
                     while (1)
                     {
+                        char filepath[256];
                         char filename[256];
                         int a = 1;
-                        printf("Enter the file name to upload or 'quit' to exit: ");
-                        fgets(filename, sizeof(filename), stdin);
-                        size_t len1 = strlen(filename);
-                        if (len1 > 0 && filename[len1 - 1] == '\n')
+                        printf("Enter the file name (file path) to upload or 'quit' to exit: ");
+                        fgets(filepath, sizeof(filepath), stdin);
+                        size_t len1 = strlen(filepath);
+                        if (len1 > 0 && filepath[len1 - 1] == '\n')
                         {
-                            filename[len1 - 1] = '\0';
+                            filepath[len1 - 1] = '\0';
                         }
 
-                        if (strcmp(filename, "quit") == 0)
+                        if (strcmp(filepath, "quit") == 0)
                         {
                             break;
                             //a = 0;
                         }
+                        const char *lastSlash = strrchr(filepath, '/');
+                        if (lastSlash != NULL) {
+                                strcpy(filename, lastSlash + 1);
+                        }
+                        else {
+                                strcpy(filename, filepath);
+                        }
 
-                        for (int i = 0; i < num_files; i++)
+                        for (int i = 0; i < listFile.num_files; i++)
                         {
-                            if (strcmp(filename, fileList[i]) == 0)
+                            if (strcmp(filepath, listFile.filenames[i]) == 0)
                             {
                                 a = 0;
                                 socket_fd = socket(AF_INET, SOCK_STREAM, 0);
                                 connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-                                snprintf(request, sizeof(request), "%s%s", password, fileList[i]);
-                                send(socket_fd, request, strlen(request), 0);
+                                snprintf(request, sizeof(request), "%s%s", password, filename);
+                                send(socket_fd, request, strlen(request) + 1, 0);
                                 if (lets_upload(socket_fd) == 1){
-                                        upload_file(socket_fd, fileList[i]);
-                                        printf("Upload %s successfully.\n", fileList[i]);
+                                        upload_file(socket_fd, listFile.filenames[i]);
+                                        printf("Upload %s successfully.\n", filename);
                                 }
                                 close(socket_fd);
                                 break;
@@ -381,7 +444,6 @@ int main()
         }
         close(socket_fd);
     }
-
 
     return 0;
 }
