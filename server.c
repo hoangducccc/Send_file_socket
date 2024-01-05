@@ -13,12 +13,6 @@
 #define FILE_PATH "files_server/"
 #define PASSWORD "nhom1"
 
-void error(char *message)
-{
-    perror(message);
-    exit(1);
-}
-
 typedef struct
 {
     int num_files;
@@ -35,7 +29,6 @@ void sendFile(int client_socket, char *filename)
     if (file == NULL)
     {
         perror("Unable to open the file.");
-        exit(EXIT_FAILURE);
     }
 
     char buffer[1024];
@@ -47,13 +40,11 @@ void sendFile(int client_socket, char *filename)
         {
             perror("Error while sending data.");
             fclose(file);
-            exit(EXIT_FAILURE);
         }
         if ((size_t)bytesSent != bytesRead)
         {
             perror("Not enough data sent.");
             fclose(file);
-            exit(EXIT_FAILURE);
         }
     }
 
@@ -103,8 +94,43 @@ void listFiles(int client_socket)
 
     if (send(client_socket, &fileList, sizeof(fileList), 0) == -1)
     {
-        error("Error when sending the file list");
+        perror("Error");
     }
+}
+
+char* findNewFileName(char *filename) {
+    char *newFilename = malloc(strlen(filename) + 5);
+    int t = 0;
+    struct dirent *de;
+    char name[256];
+    char extension[256];
+    strcpy(newFilename, filename);
+    strcpy(name, filename);
+    char *ext = strrchr(name, '.');
+    if(ext != NULL){
+        strcpy(extension, ext);
+        *ext = '\0';
+    }
+    int a = 1;
+    while(a) {
+        a = 0;
+        DIR *dr = opendir(FILE_PATH);
+        while ((de = readdir(dr)) != NULL) {
+            if (strcmp(de->d_name, newFilename) == 0) {
+                a = 1;
+                t++;
+                if(ext != NULL){
+                    sprintf(newFilename, "%s_%d%s", name, t, extension);
+                }
+                else {
+                    sprintf(newFilename, "%s_%d", name, t);
+                }
+                break;
+            }
+        }
+        closedir(dr);
+    }
+    return newFilename;
 }
 
 
@@ -117,7 +143,6 @@ void receiveFile(int client_socket, char *filename)
     if (file == NULL)
     {
         perror("Unable to create file.");
-        exit(EXIT_FAILURE);
     }
 
     char buffer[1024];
@@ -135,41 +160,38 @@ void receiveFile(int client_socket, char *filename)
         {
             perror("Write to file failed");
             fclose(file);
-            exit(EXIT_FAILURE);
+            break;
         }
     }
 
     fclose(file);
 }
 
-void upload_confirm(int client_socket)
+void uploadConfirm(int client_socket)
 {
-    char request[1024] = "agree_to_upload";
-    send(client_socket, request, strlen(request), 0);
+    char request[] = "agree_to_upload";
+    send(client_socket, request, strlen(request) + 1, 0);
 }
 
-void upload_refuse(int client_socket)
+
+void uploadRefuse(int client_socket)
 {
-    char request[1024] = "refuse_to_upload";
-    send(client_socket, request, strlen(request), 0);
+    char request[] = "refuse_to_upload";
+    send(client_socket, request, strlen(request) + 1, 0);
 }
 
-void lets_upload(int client_socket)
+void letsUpload(int client_socket)
 {
-    char request[1024] = "let's_upload";
-    send(client_socket, request, strlen(request), 0);
+    char request[] = "let's_upload";
+    send(client_socket, request, strlen(request) + 1, 0);
 }
 
 void *client_handler(void *arg)
 {
     int client_socket = *((int *)arg);
     char buffer[1024];
-    char filename[1024];
     ssize_t bytesRead;
     size_t length_password = strlen(PASSWORD);
-
-    memset(buffer, 0, sizeof(buffer));
-    memset(filename, 0, sizeof(filename));
 
     bytesRead = recv(client_socket, buffer, sizeof(buffer), 0);
     if (bytesRead <= 0)
@@ -178,19 +200,14 @@ void *client_handler(void *arg)
         pthread_exit(NULL);
     }
 
-    if (buffer[bytesRead - 1] == '\n')
-    {
-        buffer[bytesRead - 1] = '\0';
-    }
-
     if (strcmp(buffer, "list") == 0)
     {
         listFiles(client_socket);
     }
     else if (strncmp(buffer, "send", 4) == 0)
     {
-        strcpy(filename, buffer + 4);
-        sendFile(client_socket, filename);
+        strcpy(buffer, buffer + 4);
+        sendFile(client_socket, buffer);
     }
     else if (strncmp(buffer, "upload", 6) == 0)
     {
@@ -200,23 +217,21 @@ void *client_handler(void *arg)
             strcpy(buffer, buffer + length_password);
             if (strlen(buffer) == 0)
             {
-                upload_confirm(client_socket);
+                uploadConfirm(client_socket);
             }
         }
         else
         {
-            upload_refuse(client_socket);
+            uploadRefuse(client_socket);
         }
     }
     else if (strncmp(buffer, PASSWORD, length_password) == 0)
     {
         strcpy(buffer, buffer + length_password);
-        lets_upload(client_socket);
-        receiveFile(client_socket, buffer);
-    }
-    else
-    {
-        printf("%s", buffer);
+        char *newfilename = findNewFileName(buffer);
+        letsUpload(client_socket);
+        receiveFile(client_socket, newfilename);
+        free(newfilename);
     }
 
     close(client_socket);
@@ -232,7 +247,8 @@ int main()
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd == -1)
     {
-        error("Unable to create socket.");
+        perror("Unable to create socket.");
+        exit(1);
     }
 
     server_addr.sin_family = AF_INET;
@@ -241,12 +257,14 @@ int main()
 
     if (bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
-        error("Unable to bind the socket.");
+        perror("Unable to bind the socket.");
+        exit(1);
     }
 
     if (listen(socket_fd, 5) == -1)
     {
-        error("Unable to listen for connections.");
+        perror("Unable to listen for connections.");
+        exit(1);
     }
 
     printf("Waiting for connection...\n");
