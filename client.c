@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
@@ -30,8 +32,7 @@ void receiveFile(int socket_fd, char *filename)
     FILE *file = fopen(filepath, "wb");
     if (file == NULL)
     {
-        perror("Unable to create file.");
-        exit(EXIT_FAILURE);
+        error("Unable to create file.");
     }
 
     char buffer[1024];
@@ -47,9 +48,8 @@ void receiveFile(int socket_fd, char *filename)
         size_t bytesWritten = fwrite(buffer, 1, bytesRead, file);
         if (bytesWritten != bytesRead)
         {
-            perror("Write to file failed");
             fclose(file);
-            exit(EXIT_FAILURE);
+            error("Write to file failed");
         }
     }
 
@@ -66,8 +66,7 @@ void upload_file(int socket_fd, char *filename)
     FILE *file = fopen(filepath, "rb");
     if (file == NULL)
     {
-        perror("Unable to open the file.");
-        exit(EXIT_FAILURE);
+        error("Unable to open the file.");
     }
 
     char buffer[1024];
@@ -118,15 +117,12 @@ char* findNewFileName(char *filename) {
     struct dirent *de;
     char name[256];
     char extension[256];
-    //DIR *dr = opendir("demo");
     strcpy(newFilename, filename);
     strcpy(name, filename);
     char *ext = strrchr(name, '.');
-    //strcpy(extension, ext);
     if(ext != NULL){
         strcpy(extension, ext);
         *ext = '\0';
-        //strcpy(extension, ext);
     }
     int a = 1;
     while(a) {
@@ -157,7 +153,6 @@ int upload_confirm(int socket_fd)
     int t = 1;
 
     bytesRead = recv(socket_fd, buffer, sizeof(buffer), 0);
-    printf("%s", buffer);
     if (bytesRead <= 0)
     {
         close(socket_fd);
@@ -340,7 +335,6 @@ int main()
                 }
                 free(newfilename);
             }
-            //free(newfilename);
             break;
         }
 
@@ -371,11 +365,6 @@ int main()
                 if (upload_confirm(socket_fd) == 1)
                 {
                     b = 0;
-                    //close(socket_fd);
-
-                    //int a = 1;
-                    //int num_files;
-                    //char fileList = list_files_upload(&num_files);
                     SendFileList listFile = listFilesUpload();
                     while (1)
                     {
@@ -393,7 +382,6 @@ int main()
                         if (strcmp(filepath, "quit") == 0)
                         {
                             break;
-                            //a = 0;
                         }
                         const char *lastSlash = strrchr(filepath, '/');
                         if (lastSlash != NULL) {
