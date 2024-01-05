@@ -9,7 +9,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#define PORT 8080
+#define PORT 8081
 #define FILE_PATH "files_server/"
 #define PASSWORD "nhom1"
 
