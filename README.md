@@ -30,7 +30,7 @@ Biên dịch chương trình từ client.c
 ```
 gcc -o client client.c
 ```
-Chạy chương trình bên client
+  Chạy chương trình bên client
 ```
 ./client
 ```
