@@ -259,7 +259,7 @@ int main()
             error("Connection to the server failed.");
         }
 
-        printf("====== Please choose a service =====\n");
+        printf("====== Please choose a service ======\n");
         printf("1. List file\n");
         printf("2. Download\n");
         printf("3. Upload\n");
