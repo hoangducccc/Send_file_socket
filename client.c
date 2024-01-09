@@ -429,7 +429,7 @@ int main()
         default:
             printf("Invalid choice. Please try again.\n");
             break;
-        }
+    
         close(socket_fd);
     }
 
